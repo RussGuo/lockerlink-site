@@ -1,8 +1,10 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8f9fb;
+  --foreground: #0f172a;
+  --accent-orange: #ff7e00;
+  --accent-blue: #007aff;
 }
 
 @theme inline {
@@ -10,17 +12,30 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --color-brand-orange: var(--accent-orange);
+  --color-brand-blue: var(--accent-blue);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    @apply border-neutral-200;
   }
-}
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    @apply min-h-screen bg-[var(--background)] text-[var(--foreground)] font-sans antialiased;
+  }
+
+  ::selection {
+    background-color: color-mix(in srgb, var(--accent-blue) 70%, white);
+    color: white;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply tracking-tight text-[var(--foreground)];
+  }
 }
