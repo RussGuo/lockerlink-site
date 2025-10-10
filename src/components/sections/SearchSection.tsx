@@ -2,6 +2,7 @@
 
 import { FormEvent, useMemo } from "react";
 import { MapCity } from "@/lib/i18n/translations";
+import { useAnalytics } from "@/hooks/useAnalytics";
 
 interface SearchSectionProps {
   title: string;
@@ -14,13 +15,19 @@ interface SearchSectionProps {
 
 export const SearchSection = ({ title, locationLabel, locationPlaceholder, dateLabel, actionLabel, cities }: SearchSectionProps) => {
   const suggestions = useMemo(() => cities.map((city) => city.name), [cities]);
+  const { track } = useAnalytics();
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const location = formData.get("location");
     const date = formData.get("date");
-    console.info("[search]", { location, date });
+    track("search_submit", {
+      metadata: {
+        location,
+        date,
+      },
+    });
   };
 
   return (

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FiInstagram, FiLinkedin, FiTwitter } from "react-icons/fi";
 import { useTranslations } from "@/hooks/useTranslations";
+import { useAnalytics } from "@/hooks/useAnalytics";
 
 const SOCIAL_LINKS = [
   { icon: FiInstagram, href: "https://instagram.com", label: "Instagram" },
@@ -12,6 +13,7 @@ const SOCIAL_LINKS = [
 
 export const Footer = () => {
   const { footer } = useTranslations();
+  const { track } = useAnalytics();
 
   return (
     <footer className="border-t border-neutral-200 bg-white/90 backdrop-blur-sm">
@@ -37,6 +39,14 @@ export const Footer = () => {
                 <Icon className="size-4" />
               </a>
             ))}
+            <Link
+              href="/analytics"
+              onClick={() => track("analytics_dashboard_open")}
+              className="group flex h-6 w-6 items-center justify-center rounded-full border border-transparent text-neutral-400 transition hover:border-neutral-600 hover:text-neutral-900 focus-visible:border-neutral-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300"
+            >
+              <span className="sr-only">Open analytics dashboard</span>
+              <span className="inline-flex h-1.5 w-1.5 rounded-full bg-neutral-300 transition group-hover:bg-[var(--accent-blue)] group-focus-visible:bg-[var(--accent-blue)]" />
+            </Link>
           </div>
           <p className="text-sm text-neutral-600">{footer.rights}</p>
         </div>

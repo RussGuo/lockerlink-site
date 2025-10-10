@@ -3,13 +3,16 @@
 import type { ChangeEvent } from "react";
 import { LANGUAGE_LABELS, SUPPORTED_LANGUAGES, type Language } from "@/lib/i18n/languages";
 import { useLanguage } from "@/components/LanguageProvider";
+import { useAnalytics } from "@/hooks/useAnalytics";
 
 export const LanguageSwitcher = () => {
   const { language, setLanguage } = useLanguage();
+  const { track } = useAnalytics();
 
   const handleChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const value = event.target.value as Language;
     setLanguage(value);
+    track("language_change", { metadata: { target: value } });
   };
 
   return (

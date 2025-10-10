@@ -28,6 +28,7 @@ src/
   lib/i18n/            # Translation registry and language helpers
 public/city_imgs/      # Hero + section imagery provided in PRD
 docs/product-spec-prd.md  # Original Lockerlink PRD reference
+docs/analytics-events.md  # 埋点事件说明与 Dashboard 入口
 ```
 
 ### Getting started
@@ -56,6 +57,24 @@ The project is pre-configured for Vercel:
 4. Deploy. Static assets (including `public/city_imgs`) are included automatically.
 
 For self-hosting, run `npm run build` followed by `npm start` on your target infrastructure.
+
+### Analytics setup
+The landing site ships with a lightweight analytics pipeline:
+- API routes store click events into Vercel Postgres.
+- A hidden footer button (small dot next to the social icons) links to `/analytics`, an internal dashboard with adjustable date range and recent activity feed.
+
+To enable it in production:
+1. Provision Vercel Postgres (or supply a compatible PostgreSQL connection).
+2. Configure the following environment variables in Vercel → Project Settings:
+   - `POSTGRES_URL`
+   - `POSTGRES_PRISMA_URL`
+   - `POSTGRES_URL_NON_POOLING`
+   - `POSTGRES_DATABASE`
+   - `POSTGRES_USER`
+   - `POSTGRES_PASSWORD`
+3. Redeploy; the `analytics_events` table will be created automatically.
+
+See `docs/analytics-events.md` for the full tracking schema and event catalogue.
 
 ### Assets
 High-resolution imagery referenced in the PRD lives in `public/city_imgs/`. Update or expand the set as needed; `<Image>` optimisations handle responsive delivery automatically.
