@@ -42,7 +42,7 @@ export async function GET(request: Request) {
          FROM analytics_events
          WHERE created_at BETWEEN $1::timestamptz AND $2::timestamptz
          GROUP BY event_id
-         ORDER BY total::int DESC`,
+         ORDER BY COUNT(*) DESC`,
         [fromISO, toISO]
       );
 

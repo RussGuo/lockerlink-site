@@ -34,7 +34,7 @@ export const AnalyticsDashboard = async () => {
          FROM analytics_events
          WHERE created_at BETWEEN $1::timestamptz AND $2::timestamptz
          GROUP BY event_id
-         ORDER BY total::int DESC`,
+         ORDER BY COUNT(*) DESC`,
         [range.from, range.to]
       );
 
