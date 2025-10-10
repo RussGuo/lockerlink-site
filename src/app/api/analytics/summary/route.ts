@@ -36,33 +36,28 @@ export async function GET(request: Request) {
       });
     }
 
-    const summary = await withAnalyticsTable(async (sql) => {
-      const aggregatePromise = sql<{
-        event_id: string;
-        total: string;
-      }>`
-        SELECT event_id, COUNT(*)::text AS total
-        FROM analytics_events
-        WHERE created_at BETWEEN ${fromISO}::timestamptz AND ${toISO}::timestamptz
-        GROUP BY event_id
-        ORDER BY total::int DESC;
-      `;
+    const summary = await withAnalyticsTable(async (client) => {
+      const aggregatePromise = client.query<{ event_id: string; total: string }>(
+        `SELECT event_id, COUNT(*)::text AS total
+         FROM analytics_events
+         WHERE created_at BETWEEN $1::timestamptz AND $2::timestamptz
+         GROUP BY event_id
+         ORDER BY total::int DESC`,
+        [fromISO, toISO]
+      );
 
-      const timelinePromise = sql<{
-        bucket: string;
-        event_id: string;
-        total: string;
-      }>`
-        SELECT to_char(date_trunc('day', created_at), 'YYYY-MM-DD') AS bucket,
-               event_id,
-               COUNT(*)::text AS total
-        FROM analytics_events
-        WHERE created_at BETWEEN ${fromISO}::timestamptz AND ${toISO}::timestamptz
-        GROUP BY bucket, event_id
-        ORDER BY bucket ASC;
-      `;
+      const timelinePromise = client.query<{ bucket: string; event_id: string; total: string }>(
+        `SELECT to_char(date_trunc('day', created_at), 'YYYY-MM-DD') AS bucket,
+                event_id,
+                COUNT(*)::text AS total
+         FROM analytics_events
+         WHERE created_at BETWEEN $1::timestamptz AND $2::timestamptz
+         GROUP BY bucket, event_id
+         ORDER BY bucket ASC`,
+        [fromISO, toISO]
+      );
 
-      const latestPromise = sql<{
+      const latestPromise = client.query<{
         id: string;
         event_id: string;
         label: string | null;
@@ -72,15 +67,20 @@ export async function GET(request: Request) {
         metadata: Record<string, unknown> | null;
         user_agent: string | null;
         created_at: string;
-      }>`
-        SELECT id::text, event_id, label, language, page, path, metadata, user_agent, created_at::text
-        FROM analytics_events
-        WHERE created_at BETWEEN ${fromISO}::timestamptz AND ${toISO}::timestamptz
-        ORDER BY created_at DESC
-        LIMIT 50;
-      `;
+      }>(
+        `SELECT id::text, event_id, label, language, page, path, metadata, user_agent, created_at::text
+         FROM analytics_events
+         WHERE created_at BETWEEN $1::timestamptz AND $2::timestamptz
+         ORDER BY created_at DESC
+         LIMIT 50`,
+        [fromISO, toISO]
+      );
 
-      const [aggregateResult, timelineResult, latestResult] = await Promise.all([aggregatePromise, timelinePromise, latestPromise]);
+      const [aggregateResult, timelineResult, latestResult] = await Promise.all([
+        aggregatePromise,
+        timelinePromise,
+        latestPromise,
+      ]);
 
       return {
         events: aggregateResult.rows,

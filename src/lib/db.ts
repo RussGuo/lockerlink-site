@@ -1,44 +1,40 @@
-import { createClient } from "@vercel/postgres";
+import { Pool } from "pg";
 
-type VercelClient = ReturnType<typeof createClient>;
-type SqlClient = VercelClient["sql"];
+type Queryable = Pool;
 
-const DATABASE_ENV_VARS = [
-  "POSTGRES_URL",
-  "POSTGRES_PRISMA_URL",
-  "POSTGRES_URL_NON_POOLING",
-  "DATABASE_URL",
-  "POSTGRES_DATABASE_URL",
-  "POSTGRES_USER",
-];
+const connectionString =
+  process.env.POSTGRES_URL ||
+  process.env.POSTGRES_DATABASE_URL ||
+  process.env.DATABASE_URL ||
+  process.env.POSTGRES_PRISMA_URL ||
+  process.env.POSTGRES_URL_NON_POOLING ||
+  null;
 
-export const analyticsEnabled = DATABASE_ENV_VARS.some((key) => Boolean(process.env[key]));
+export const analyticsEnabled = Boolean(connectionString);
 
-let clientPromise: Promise<VercelClient> | null = null;
+let pool: Pool | null = null;
+let tableInitPromise: Promise<void> | null = null;
 
-const getClient = async (): Promise<VercelClient> => {
-  if (!analyticsEnabled) {
+const getPool = (): Pool => {
+  if (!analyticsEnabled || !connectionString) {
     throw new Error("ANALYTICS_DISABLED");
   }
 
-  if (!clientPromise) {
-    const connectionString =
-      process.env.POSTGRES_URL || process.env.POSTGRES_DATABASE_URL || process.env.DATABASE_URL;
-
-    const client = connectionString ? createClient({ connectionString }) : createClient();
-    clientPromise = client.connect().then(() => client);
+  if (!pool) {
+    pool = new Pool({
+      connectionString,
+      ssl: connectionString.includes("sslmode=require")
+        ? { rejectUnauthorized: false }
+        : undefined,
+      max: 5,
+    });
   }
 
-  return clientPromise;
+  return pool;
 };
 
-const getSql = async (): Promise<SqlClient> => {
-  const client = await getClient();
-  return client.sql;
-};
-
-const ensureTable = async (sql: SqlClient) => {
-  await sql`
+const ensureTable = async (client: Queryable) => {
+  await client.query(`
     CREATE TABLE IF NOT EXISTS analytics_events (
       id UUID PRIMARY KEY,
       event_id TEXT NOT NULL,
@@ -50,17 +46,23 @@ const ensureTable = async (sql: SqlClient) => {
       user_agent TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
-  `;
-  await sql`CREATE INDEX IF NOT EXISTS analytics_events_event_id_idx ON analytics_events (event_id);`;
-  await sql`CREATE INDEX IF NOT EXISTS analytics_events_created_at_idx ON analytics_events (created_at);`;
+  `);
+  await client.query(`CREATE INDEX IF NOT EXISTS analytics_events_event_id_idx ON analytics_events (event_id);`);
+  await client.query(`CREATE INDEX IF NOT EXISTS analytics_events_created_at_idx ON analytics_events (created_at);`);
 };
 
-export const withAnalyticsTable = async <T>(fn: (sql: SqlClient) => Promise<T>) => {
+export const withAnalyticsTable = async <T>(fn: (client: Queryable) => Promise<T>): Promise<T> => {
   if (!analyticsEnabled) {
     throw new Error("ANALYTICS_DISABLED");
   }
 
-  const sql = await getSql();
-  await ensureTable(sql);
-  return fn(sql);
+  const client = getPool();
+
+  if (!tableInitPromise) {
+    tableInitPromise = ensureTable(client);
+  }
+
+  await tableInitPromise;
+
+  return fn(client);
 };

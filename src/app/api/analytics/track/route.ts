@@ -5,10 +5,10 @@ import { analyticsEnabled, withAnalyticsTable } from "@/lib/db";
 const TrackEventSchema = z.object({
   id: z.string().min(1),
   eventId: z.string().min(1),
-  label: z.string().optional(),
-  language: z.string().optional(),
-  page: z.string().optional(),
-  path: z.string().optional(),
+  label: z.string().optional().nullable(),
+  language: z.string().optional().nullable(),
+  page: z.string().optional().nullable(),
+  path: z.string().optional().nullable(),
   metadata: z.record(z.string(), z.unknown()).nullable().optional(),
   occurredAt: z.string().datetime().optional(),
 });
@@ -26,26 +26,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
 
-    const {
-      id,
-      eventId,
-      label,
-      language,
-      page,
-      path,
-      metadata,
-      occurredAt,
-    } = parsed.data;
+    const { id, eventId, label, language, page, path, metadata, occurredAt } = parsed.data;
 
     const userAgent = request.headers.get("user-agent") ?? "unknown";
     const createdAt = occurredAt ?? new Date().toISOString();
     const metadataJson = metadata ? JSON.stringify(metadata) : null;
 
-    await withAnalyticsTable(async (sql) => {
-      await sql`
-        INSERT INTO analytics_events (id, event_id, label, language, page, path, metadata, user_agent, created_at)
-        VALUES (${id}::uuid, ${eventId}, ${label ?? null}, ${language ?? null}, ${page ?? null}, ${path ?? null}, ${metadataJson}::jsonb, ${userAgent}, ${createdAt}::timestamptz)
-      `;
+    await withAnalyticsTable(async (client) => {
+      await client.query(
+        `INSERT INTO analytics_events (id, event_id, label, language, page, path, metadata, user_agent, created_at)
+         VALUES ($1::uuid, $2, $3, $4, $5, $6, $7::jsonb, $8, $9::timestamptz)`,
+        [id, eventId, label ?? null, language ?? null, page ?? null, path ?? null, metadataJson, userAgent, createdAt]
+      );
     });
 
     return NextResponse.json({ ok: true });

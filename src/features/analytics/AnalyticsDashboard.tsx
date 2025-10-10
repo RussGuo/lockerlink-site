@@ -28,33 +28,28 @@ export const AnalyticsDashboard = async () => {
   } as const;
 
   try {
-    const data = await withAnalyticsTable(async (sql) => {
-      const aggregatePromise = sql<{
-        event_id: string;
-        total: string;
-      }>`
-        SELECT event_id, COUNT(*)::text AS total
-        FROM analytics_events
-        WHERE created_at BETWEEN ${range.from}::timestamptz AND ${range.to}::timestamptz
-        GROUP BY event_id
-        ORDER BY total::int DESC;
-      `;
+    const data = await withAnalyticsTable(async (client) => {
+      const aggregatePromise = client.query<{ event_id: string; total: string }>(
+        `SELECT event_id, COUNT(*)::text AS total
+         FROM analytics_events
+         WHERE created_at BETWEEN $1::timestamptz AND $2::timestamptz
+         GROUP BY event_id
+         ORDER BY total::int DESC`,
+        [range.from, range.to]
+      );
 
-      const timelinePromise = sql<{
-        bucket: string;
-        event_id: string;
-        total: string;
-      }>`
-        SELECT to_char(date_trunc('day', created_at), 'YYYY-MM-DD') AS bucket,
-               event_id,
-               COUNT(*)::text AS total
-        FROM analytics_events
-        WHERE created_at BETWEEN ${range.from}::timestamptz AND ${range.to}::timestamptz
-        GROUP BY bucket, event_id
-        ORDER BY bucket ASC;
-      `;
+      const timelinePromise = client.query<{ bucket: string; event_id: string; total: string }>(
+        `SELECT to_char(date_trunc('day', created_at), 'YYYY-MM-DD') AS bucket,
+                event_id,
+                COUNT(*)::text AS total
+         FROM analytics_events
+         WHERE created_at BETWEEN $1::timestamptz AND $2::timestamptz
+         GROUP BY bucket, event_id
+         ORDER BY bucket ASC`,
+        [range.from, range.to]
+      );
 
-      const latestPromise = sql<{
+      const latestPromise = client.query<{
         id: string;
         event_id: string;
         label: string | null;
@@ -64,13 +59,14 @@ export const AnalyticsDashboard = async () => {
         metadata: Record<string, unknown> | null;
         user_agent: string | null;
         created_at: string;
-      }>`
-        SELECT id::text, event_id, label, language, page, path, metadata, user_agent, created_at::text
-        FROM analytics_events
-        WHERE created_at BETWEEN ${range.from}::timestamptz AND ${range.to}::timestamptz
-        ORDER BY created_at DESC
-        LIMIT 50;
-      `;
+      }>(
+        `SELECT id::text, event_id, label, language, page, path, metadata, user_agent, created_at::text
+         FROM analytics_events
+         WHERE created_at BETWEEN $1::timestamptz AND $2::timestamptz
+         ORDER BY created_at DESC
+         LIMIT 50`,
+        [range.from, range.to]
+      );
 
       const [aggregateResult, timelineResult, latestResult] = await Promise.all([
         aggregatePromise,
@@ -78,15 +74,11 @@ export const AnalyticsDashboard = async () => {
         latestPromise,
       ]);
 
-      const totals = aggregateResult.rows;
-      const timeline = timelineResult.rows;
-      const latest = latestResult.rows;
-
       return {
         range,
-        totals: totals.map((row) => ({ eventId: row.event_id, total: Number(row.total) })),
-        timeline: timeline.map((row) => ({ bucket: row.bucket, eventId: row.event_id, total: Number(row.total) })),
-        latest: latest.map((row) => ({
+        totals: aggregateResult.rows.map((row) => ({ eventId: row.event_id, total: Number(row.total) })),
+        timeline: timelineResult.rows.map((row) => ({ bucket: row.bucket, eventId: row.event_id, total: Number(row.total) })),
+        latest: latestResult.rows.map((row) => ({
           id: row.id,
           eventId: row.event_id,
           label: row.label,
