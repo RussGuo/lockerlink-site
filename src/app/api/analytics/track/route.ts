@@ -9,7 +9,7 @@ const TrackEventSchema = z.object({
   language: z.string().optional(),
   page: z.string().optional(),
   path: z.string().optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).nullable().optional(),
   occurredAt: z.string().datetime().optional(),
 });
 
