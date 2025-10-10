@@ -3,13 +3,13 @@ import { z } from "zod";
 import { analyticsEnabled, withAnalyticsTable } from "@/lib/db";
 
 const TrackEventSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1),
   eventId: z.string().min(1),
   label: z.string().optional(),
   language: z.string().optional(),
   page: z.string().optional(),
   path: z.string().optional(),
-  metadata: z.record(z.string(), z.any()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
   occurredAt: z.string().datetime().optional(),
 });
 
@@ -22,6 +22,7 @@ export async function POST(request: Request) {
     const payload = await request.json();
     const parsed = TrackEventSchema.safeParse(payload);
     if (!parsed.success) {
+      console.warn("[analytics][track][invalid]", parsed.error.flatten());
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
 
