@@ -1,4 +1,4 @@
-import { sql, withAnalyticsTable } from "@/lib/db";
+import { withAnalyticsTable } from "@/lib/db";
 import { AnalyticsDashboardClient } from "@/features/analytics/AnalyticsDashboardClient";
 
 const DEFAULT_DAYS = 7;
@@ -28,7 +28,7 @@ export const AnalyticsDashboard = async () => {
   } as const;
 
   try {
-    const data = await withAnalyticsTable(async () => {
+    const data = await withAnalyticsTable(async (sql) => {
       const aggregatePromise = sql<{
         event_id: string;
         total: string;

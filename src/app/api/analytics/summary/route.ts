@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { analyticsEnabled, sql, withAnalyticsTable } from "@/lib/db";
+import { analyticsEnabled, withAnalyticsTable } from "@/lib/db";
 
 const SummaryQuerySchema = z.object({
   from: z.string().datetime().optional(),
@@ -36,7 +36,7 @@ export async function GET(request: Request) {
       });
     }
 
-    const summary = await withAnalyticsTable(async () => {
+    const summary = await withAnalyticsTable(async (sql) => {
       const aggregatePromise = sql<{
         event_id: string;
         total: string;

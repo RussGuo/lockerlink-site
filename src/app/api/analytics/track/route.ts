@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { analyticsEnabled, sql, withAnalyticsTable } from "@/lib/db";
+import { analyticsEnabled, withAnalyticsTable } from "@/lib/db";
 
 const TrackEventSchema = z.object({
   id: z.string().uuid(),
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     const createdAt = occurredAt ?? new Date().toISOString();
     const metadataJson = metadata ? JSON.stringify(metadata) : null;
 
-    await withAnalyticsTable(async () => {
+    await withAnalyticsTable(async (sql) => {
       await sql`
         INSERT INTO analytics_events (id, event_id, label, language, page, path, metadata, user_agent, created_at)
         VALUES (${id}::uuid, ${eventId}, ${label ?? null}, ${language ?? null}, ${page ?? null}, ${path ?? null}, ${metadataJson}::jsonb, ${userAgent}, ${createdAt}::timestamptz)
