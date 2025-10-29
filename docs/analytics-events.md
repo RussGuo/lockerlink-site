@@ -32,9 +32,13 @@
 | `partner_secondary_click` | 合作伙伴页 Hero 次按钮 | 查看合作案例。 | 无 |
 | `account_primary_click` | 我的账户页 Hero 主按钮 | 前往登录。 | 无 |
 | `account_secondary_click` | 我的账户页 Hero 次按钮 | 创建账户。 | 无 |
-| `search_submit` | 「Find a locker / 查找寄存点」搜索表单 | 用户提交城市或日期搜索。 | `location`: 输入的地点字符串；`date`: 选择的日期（可为空） |
+| `search_submit` | 「Find a locker / 查找寄存点」搜索表单 | 用户提交城市或日期搜索（通用事件，已保留兼容）。 | `location`: 输入的地点字符串；`date`: 选择的日期（可为空） |
+| `search_storage_submit` | 存包页搜索表单 | 存包场景下的专用搜索事件（便于与转运分开统计）。 | 同上 |
+| `search_delivery_submit` | 转运页搜索表单 | 转运场景下的专用搜索事件（便于与存包分开统计）。 | 同上 |
 | `analytics_dashboard_open` | 页脚隐蔽按钮 | 团队成员打开内部仪表盘。 | 无 |
-| `subscribe_submit` | 「服务即将上线」订阅面板 | 用户提交邮箱订阅完整服务（当前用于转运页搜索后展示）。 | `email`: 邮箱；`intent`: 业务意图（如 `delivery`） |
+| `subscribe_submit` | 「服务即将上线」订阅面板 | 用户提交邮箱订阅完整服务（通用事件，已保留兼容）。 | `email`: 邮箱；`intent`: 业务意图（如 `delivery`） |
+| `subscribe_storage_submit` | 存包订阅面板 | 用户在存包流程中提交订阅。 | `email`: 邮箱；`intent`: `storage` |
+| `subscribe_delivery_submit` | 转运订阅面板 | 用户在转运流程中提交订阅。 | `email`: 邮箱；`intent`: `delivery` |
 
 （若将来新增 CTA/按钮，请同步更新此表，以便分析对照。）
 

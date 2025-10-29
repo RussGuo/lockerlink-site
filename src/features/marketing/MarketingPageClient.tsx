@@ -84,6 +84,12 @@ export const MarketingPageClient = ({
     return map[language] ?? map.en;
   }, [language]);
 
+  const intent = useMemo<"delivery" | "storage" | null>(() => {
+    if (pageId === "delivery") return "delivery";
+    if (pageId === "storage") return "storage";
+    return null;
+  }, [pageId]);
+
   return (
     <div className="min-h-screen bg-[var(--background)]">
       <Header />
@@ -102,15 +108,17 @@ export const MarketingPageClient = ({
           dateLabel={content.searchSection.dateLabel}
           actionLabel={content.searchSection.actionLabel}
           cities={content.mapSection.cities}
+          searchEventId={intent ? `search_${intent}_submit` : undefined}
+          subscribeEventId={intent ? `subscribe_${intent}_submit` : undefined}
           comingSoon={
-            pageId === "delivery"
+            intent
               ? {
                   enabled: true,
                   title: comingSoonCopy.title,
                   subtitle: comingSoonCopy.subtitle,
                   ctaLabel: comingSoonCopy.cta,
                   inputPlaceholder: comingSoonCopy.placeholder,
-                  eventMetadata: { intent: "delivery" },
+                  eventMetadata: { intent },
                 }
               : undefined
           }

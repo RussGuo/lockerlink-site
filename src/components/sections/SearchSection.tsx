@@ -11,6 +11,8 @@ interface SearchSectionProps {
   dateLabel: string;
   actionLabel: string;
   cities: MapCity[];
+  searchEventId?: string;
+  subscribeEventId?: string;
   comingSoon?: {
     enabled: boolean;
     title: string;
@@ -28,6 +30,8 @@ export const SearchSection = ({
   dateLabel,
   actionLabel,
   cities,
+  searchEventId,
+  subscribeEventId,
   comingSoon,
 }: SearchSectionProps) => {
   const suggestions = useMemo(() => cities.map((city) => city.name), [cities]);
@@ -41,10 +45,11 @@ export const SearchSection = ({
     const formData = new FormData(event.currentTarget);
     const location = formData.get("location");
     const date = formData.get("date");
-    track("search_submit", {
+    track(searchEventId ?? "search_submit", {
       metadata: {
         location,
         date,
+        ...(comingSoon?.eventMetadata ?? {}),
       },
     });
 
@@ -57,7 +62,7 @@ export const SearchSection = ({
     event.preventDefault();
     const trimmed = email.trim();
     if (!trimmed) return;
-    track("subscribe_submit", {
+    track(subscribeEventId ?? "subscribe_submit", {
       label: "coming_soon",
       metadata: { email: trimmed, ...(comingSoon?.eventMetadata ?? {}) },
     });
