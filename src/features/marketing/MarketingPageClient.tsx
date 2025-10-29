@@ -53,6 +53,37 @@ export const MarketingPageClient = ({
     };
   }, [language, initialLanguage, initialAnalytics, initialPartnerHighlight]);
 
+  const comingSoonCopy = useMemo(() => {
+    // Lightweight inline copy to avoid large i18n changes. Defaults to English.
+    const map: Record<Language, { title: string; subtitle: string; cta: string; placeholder: string }> = {
+      zh: {
+        title: "服务即将上线",
+        subtitle: "留下邮箱，我们将在服务上线时第一时间通知您。",
+        cta: "订阅完整服务",
+        placeholder: "请输入邮箱",
+      },
+      en: {
+        title: "Service launching soon",
+        subtitle: "Leave your email and we’ll notify you as soon as it’s live.",
+        cta: "Subscribe for full service",
+        placeholder: "Enter your email",
+      },
+      ja: {
+        title: "まもなくサービス開始",
+        subtitle: "メールアドレスをご入力ください。リリース次第お知らせします。",
+        cta: "完全版を購読する",
+        placeholder: "メールアドレスを入力",
+      },
+      ko: {
+        title: "서비스 곧 출시",
+        subtitle: "이메일을 남겨주세요. 출시 즉시 알려드립니다.",
+        cta: "완전한 서비스 구독",
+        placeholder: "이메일을 입력하세요",
+      },
+    };
+    return map[language] ?? map.en;
+  }, [language]);
+
   return (
     <div className="min-h-screen bg-[var(--background)]">
       <Header />
@@ -71,6 +102,18 @@ export const MarketingPageClient = ({
           dateLabel={content.searchSection.dateLabel}
           actionLabel={content.searchSection.actionLabel}
           cities={content.mapSection.cities}
+          comingSoon={
+            pageId === "delivery"
+              ? {
+                  enabled: true,
+                  title: comingSoonCopy.title,
+                  subtitle: comingSoonCopy.subtitle,
+                  ctaLabel: comingSoonCopy.cta,
+                  inputPlaceholder: comingSoonCopy.placeholder,
+                  eventMetadata: { intent: "delivery" },
+                }
+              : undefined
+          }
         />
         <FeatureSection
           id="services"

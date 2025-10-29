@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { MapCity } from "@/lib/i18n/translations";
 import { useAnalytics } from "@/hooks/useAnalytics";
 
@@ -11,11 +11,30 @@ interface SearchSectionProps {
   dateLabel: string;
   actionLabel: string;
   cities: MapCity[];
+  comingSoon?: {
+    enabled: boolean;
+    title: string;
+    subtitle?: string;
+    ctaLabel: string;
+    inputPlaceholder?: string;
+    eventMetadata?: Record<string, unknown>;
+  };
 }
 
-export const SearchSection = ({ title, locationLabel, locationPlaceholder, dateLabel, actionLabel, cities }: SearchSectionProps) => {
+export const SearchSection = ({
+  title,
+  locationLabel,
+  locationPlaceholder,
+  dateLabel,
+  actionLabel,
+  cities,
+  comingSoon,
+}: SearchSectionProps) => {
   const suggestions = useMemo(() => cities.map((city) => city.name), [cities]);
   const { track } = useAnalytics();
+  const [showComingSoon, setShowComingSoon] = useState(false);
+  const [email, setEmail] = useState("");
+  const [subscribed, setSubscribed] = useState(false);
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -28,6 +47,21 @@ export const SearchSection = ({ title, locationLabel, locationPlaceholder, dateL
         date,
       },
     });
+
+    if (comingSoon?.enabled) {
+      setShowComingSoon(true);
+    }
+  };
+
+  const onSubscribe = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const trimmed = email.trim();
+    if (!trimmed) return;
+    track("subscribe_submit", {
+      label: "coming_soon",
+      metadata: { email: trimmed, ...(comingSoon?.eventMetadata ?? {}) },
+    });
+    setSubscribed(true);
   };
 
   return (
@@ -78,6 +112,33 @@ export const SearchSection = ({ title, locationLabel, locationPlaceholder, dateL
             {actionLabel}
           </button>
         </form>
+
+        {showComingSoon && comingSoon?.enabled && (
+          <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+            <h3 className="text-xl font-semibold text-neutral-900">{comingSoon.title}</h3>
+            {comingSoon.subtitle && <p className="mt-2 text-sm text-neutral-600">{comingSoon.subtitle}</p>}
+
+            <form onSubmit={onSubscribe} className="mt-4 flex flex-col gap-3 sm:flex-row">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={comingSoon.inputPlaceholder ?? "Enter your email"}
+                required
+                className="flex-1 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-800 shadow-sm outline-none transition focus:border-[var(--accent-blue)] focus:ring-2 focus:ring-[var(--accent-blue)]/40"
+              />
+              <button
+                type="submit"
+                disabled={subscribed}
+                className="rounded-2xl bg-[var(--accent-orange)] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[var(--accent-orange)]/20 transition hover:bg-[#ff8f24] disabled:opacity-60"
+              >
+                {subscribed ? "✓" : comingSoon.ctaLabel}
+              </button>
+            </form>
+
+            {/* Success state is reflected by button change to a checkmark to keep copy minimal and language-neutral. */}
+          </div>
+        )}
       </div>
     </section>
   );
